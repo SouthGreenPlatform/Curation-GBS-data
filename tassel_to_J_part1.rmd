@@ -1,0 +1,79 @@
+---
+title: "From Tassel to Joinmap part 1"
+author: "Luc Baudouin"
+date: "15 février 2016"
+output: pdf_document
+---
+
+First step: Tassel was executed and produced a VCF file. $\chi^2$ scores and P_values were computed at each locus. These values along with marker information and genotypic data were included into a new file. This step can take one or more input files (eg. because data were treated in parallel or to save memory space). For each input file, a genotypic file and a marker info file are created.
+
+# Preliminary
+
+
+
+
+
+```{r utilities,echo=FALSE}
+topath<-function(path,file) paste(path, file,sep="/")
+# Note: Set the working directory as the one where the present file is located. 
+here<-getwd()
+source(topath(here,"tassel_to_J_parameters.R"))
+if(!dir.exists(where_out_1)) dir.create(where_out_1)
+```
+
+# Information on the dataset
+
+`r comment0`
+
+# Additional comments 
+
+`r comment1`
+
+# procedure
+
+```{r functions, echo=FALSE}
+# The functions used here are in a special directory
+function_file<-list.files(where_functions)
+function_file<-function_file[grepl(".[rR]$",function_file,perl=TRUE)]
+
+bid<-sapply(paste(where_functions,"/",function_file, sep=""),source,echo=FALSE,verbose=FALSE)
+
+```
+
+## execution
+
+The first test consisted in retaining only those markers whose distribution is not too far from 50-50. 
+
+```{r data_entry, echo=FALSE}
+# convert data files and save results
+check<-convert_data(file.value, file.in, file.ident, where_in, P.value.min, where_out_1)
+message<-ifelse(length(unique(check[,"individuals"]))!=1,"problem with number of individuals","ok")
+
+initial_mark<-sum(check[,"before_mark"])
+final_mark<-sum(check[,"after_mark"])
+initial_scaff<-sum(check[,"before_scaff"])
+final_scaff<-sum(check[,"after_scaff"])
+ratio_mark<-final_mark/initial_mark
+ratio_scaff<-final_scaff/initial_scaff
+```
+
+
+This step ended with the status `r message`.
+Data with p.values below `r P.value.min` were filtered out. A negative value means no filtering. 
+
+* The number of markers was reduced  from `r formatC(initial_mark,format="f",big.mark = ",",digits=0)` to `r formatC(final_mark,format="f",big.mark = ",",digits=0)`. `r round(ratio_mark*100,2)` % of loci were conserved.
+* The number of scaffolds reduced from `r formatC(initial_scaff,format="f",big.mark = ",",digits=0)` to `r formatC(final_scaff,format="f",big.mark = ",",digits=0)`. `r round(ratio_scaff*100,2)` % of scaffolds were conserved.
+
+
+Data were in file(s)    
+`r file.in `
+
+in folder    
+`r where_in`
+
+
+Created files     
+`r paste(dir(where_out_1), collapse="\n\n")`
+
+in folder    
+`r where_out_1`

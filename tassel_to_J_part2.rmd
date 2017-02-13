@@ -1,0 +1,204 @@
+---
+title: "resultats tassel part 2"
+author: "Luc Baudouin"
+date: "15 février 2016"
+output: pdf_document
+---
+
+
+Second step: At this stage, the genotypes are assigned to the parents. Only loci whose segregation is compatible with the mating plan are retained. Statistics are computed on the disjunction and the results are written into the locus info file. The columns of the genotype table are reordered. First the parents, then the descendents in order of increasing number of missing data. All genotypeing files and all locus information file are merged at this step.  
+
+# Preliminary
+
+
+```{r get_parameters,echo=FALSE}
+topath<-function(path,file) paste(path, file,sep="/")
+# Note: Set the working directory as the one where the present file is located. 
+here<-getwd()
+source(topath(here,"tassel_to_J_parameters.R"))
+if(!dir.exists(where_out_2)) dir.create(where_out_2)
+
+
+```
+
+# Information on the dataset
+
+`r comment0`
+
+# Additional comments
+
+`r comment2`
+
+# procedure
+
+
+
+## opening the data file
+
+```{r data_entry,echo=FALSE}
+
+#Remettre l'ouverture des fichiers. Fusionner ?
+n_value<-length(file.value)
+n_id<-length(file.ident)
+if(n_id!=n_value) stop("Numbers of marker identity and genotype files differ")
+value<-NULL
+ident<-NULL
+for(i in 1:n_value){ 
+  value<-rbind(value, read.table(topath(where_out_1,file.value[i]),header = TRUE,stringsAsFactors = FALSE))
+  ident<-rbind(ident, read.table(topath(where_out_1,file.ident[i]),header = TRUE,stringsAsFactors = FALSE))
+} 
+
+  markers<-rownames(value) 
+  indiv<-colnames(value)
+ 
+# dim(value)
+# length(markers)
+
+progeny<-indiv[!(indiv %in% parent)&!(indiv %in% others)]
+
+
+```
+
+```{r parent_genotype,echo=FALSE}
+#parent
+#Valid: the parents have expected genotypes.
+if(has.hetero){ # heterozygote present 
+  if(has.homo){ # both parents
+    expected<-cbind(c("A/C","A/G","A/T","C/A","G/A","T/A",
+                      "A/C","C/A","C/G","C/T","G/C","T/C",
+                      "A/G","C/G","G/A","G/C","G/T","T/G",
+                      "A/T","C/T","G/T","T/A","T/C","T/G"),
+                    c("A/A","A/A","A/A","A/A","A/A","A/A",
+                      "C/C","C/C","C/C","C/C","C/C","C/C",
+                      "G/G","G/G","G/G","G/G","G/G","G/G",
+                      "T/T","T/T","T/T","T/T","T/T","T/T"))
+    colnames(expected)<-parent
+    expect<-apply(expected,1,paste,collapse=" ")
+    test<-apply(value[,parent],1,paste,collapse=" ")
+    tp1<-table(value[,parent[1]])
+    tp2<-table(value[,parent[2]])
+    glist<-sort(union(names(tp1),names(tp2)))
+    out1<-matrix(0, 2,length(glist),dimnames=list(parent,glist))
+    out1[parent[1],names(tp1)]<-tp1
+    out1[parent[2],names(tp2)]<-tp2
+
+    rownames(out1)<-parent
+    capt<-"Frequency of genotypes (%) in both parents"
+  }else{ # only heterozygote
+    expect<-expected<-c("A/C","A/G","A/T","C/A","C/G","C/T",
+                     "G/A","G/C","G/T","T/A","T/C","T/G")
+    test<-value[,parent[1]]
+    out1<- t(table( value[,parent[1]]))
+    rownames(out1)<-parent[1]
+    capt<-"Frequency of genotypes (%) in heterozygous parent"
+  } # end homo 1
+}else{ # no heeterozygote
+  if(has.homo){#only homozygote
+    expect<-expected<-c("A/A","C/C","G/G","T/T")
+    test<-value[,parent[2]]
+    out1<- t(table( value[,parent[2]]))
+    rownames(out1)<-parent[2]
+    capt<-"Frequency of genotypes (%) in homozygous parent"
+  }else{ # no parent available
+    stop("at least one parent should be genotyped")
+  }  #end homo 2
+  
+} # end hetero
+
+
+```
+
+```{r test,echo=FALSE}
+
+valid<-test %in% expect
+
+loc_init<-nrow(value)
+scaff_init<-length(unique(as.character(ident[[scaffold_column]]))) 
+
+value<-value[valid,] 
+ident<-ident[valid,] 
+loc_final<-nrow(value) 
+ratio_loc<-loc_final/loc_init
+scaff_final<-length(unique(as.character(ident[[scaffold_column]])))
+ratio_scaff<-scaff_final/scaff_init
+ident$Hyb<-value[[parent[1]]] 
+ident$Dwarf<-value[[parent[2]]] 
+#write.table(cbind(marker=rownames(value),value),topath(where_out,file.value.2),sep="\t",row.names=FALSE,quote=FALSE)
+
+
+```
+
+```{r last_step,echo=FALSE}
+
+test.indf <- function(ind,genot) {
+  a <- as.character(genot[,ind])
+  l <- length(a)
+  miss <- sum(a == "./.")
+  miss / l
+}
+  
+test.par <- sapply(parent, function(x)
+  test.indf(x, value))
+test.ind <- sapply(progeny, function(x)
+  test.indf(x, value))
+sti <- 1 - sort(test.ind,decreasing = FALSE)
+sti2 <- sti[sti > cut.ind]
+retain <- names(sti2)
+remove<-setdiff(progeny,retain)
+if (draw_plot) {
+  plot(
+    1:length(progeny),sti,type = "l",ylim = c(0,1),xlab = "individuals",ylab =
+      "valid data"
+  )
+  abline(h = cut.ind, col = "blue")
+  abline(v = length(retain), col = "blue")
+}
+#length(retain)
+value2 <- cbind(value[,parent],value[,retain])
+write.table(
+  cbind(rownames(value2),value2),topath(where_out_2,file.value.2),sep = "\t",row.names =
+    FALSE,quote = FALSE
+)
+test.dist <- function(mark, genot, ident,choice = retain) {
+  a <- as.character(genot[mark,choice])
+  hyb <- sum(a == as.character(ident[mark,"Hyb"]))
+  dwarf <- sum(a == as.character(ident[mark,"Dwarf"]))
+  miss <- sum(a == "./.")
+  c(
+    D = dwarf, H = hyb, M = miss, wrong = length(a) - hyb - miss - dwarf
+  )
+  
+}
+test1 <-
+  t(sapply(1:nrow(value), function(x)
+    test.dist(x, value2,ident)))
+ident <- cbind(ident,test1)# dim(ident)
+ident$total <- apply(test1,1,sum)
+ident$good <- apply(test1[,1:2],1,sum)
+ident$f_good <- ident$good / ident$total
+ident$is_good <- ident$f_good > few_good_data
+ident$f_D<-ident$D/ident$good
+ident$balanced <-
+  ident$f_D > balanced & ident$f_D < 1 - balanced
+ident$third_allele <- ident$wrong > many_wrong
+write.table(
+  ident,topath(where_out_2,file.ident.2),sep = "\t",row.names = FALSE,quote =
+    FALSE
+)
+  
+```
+End of step 2
+ 
+* The number of markers was reduced  from `r formatC(loc_init,format="f",big.mark = ",",digits=0)` to `r formatC(loc_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_loc*100,2)` % of loci were conserved.
+* The number of scaffolds reduced from `r formatC(scaff_init,format="f",big.mark = ",",digits=0)` to `r formatC(scaff_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_scaff*100,2)` % of scaffolds were conserved.
+* `r length(remove)` individuals were removed because they don't reach `r cut.ind*100` % valid data:  `r remove`. The number of remaining progenies is `r length(retain)`.
+
+Created files
+
+`r paste(dir(where_out_2), collapse="\n\n")`
+
+in directory
+
+`r where_out_2`
+
+ 

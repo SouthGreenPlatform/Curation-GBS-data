@@ -1,0 +1,100 @@
+---
+title: "Final data output (GBS)"
+author: "Luc Baudouin"
+date: "18 mai 2016"
+output: pdf_document
+---
+
+# Introduction
+Step 5: This is the last step. It creates a data file that can be used by Joinmap .
+
+
+# Preliminary
+
+```{r get_parameters,echo=FALSE}
+topath<-function(path,file) paste(path, file,sep="/")
+# Note: Set the working directory as the one where the present file is located. 
+here<-getwd()
+source(topath(here,"tassel_to_J_parameters.R"))
+if(!dir.exists(where_out_5)) dir.create(where_out_5)
+
+#require("xtable",quietly=TRUE)
+```
+
+# Information on the dataset
+
+`r comment4`
+
+Data are coded as "`r genotype_code`"
+
+## data files
+
+Genotyping data are in file "`r reduced_data`",  directory "`r where_out_4 `".
+
+Identifiers are in file "`r file.ident.3`",  directory "`r where_out_4 `".
+
+Locus column is `r marker_column`, scaffold column is `r scaffold_column`, position column is `r position_column`.
+
+Output directory is `r where_out_4`.
+
+## Source files
+```{r functions,echo=FALSE}
+
+# The functions used here are in a special directory
+function_file<-list.files(where_functions)
+function_file<-function_file[grepl(".[rR]$",function_file,perl=TRUE)]
+
+bid<-sapply(paste(where_functions,"/",function_file, sep=""),source,echo=FALSE,verbose=FALSE)
+full_path<- function(place,file) paste(place,file,sep="/")
+output_data<-function(Table, place, file) write.table(cbind(index=1:nrow(Table),loc=rownames(Table),Table),full_path(place,file),sep="\t",row.names=FALSE,quote=FALSE)
+code_U <- strsplit(genotype_code,split = "")[[1]]
+code_L <- tolower(code_U)
+val1 <- sort(c(code_L, code_U))
+  unknown <- c(code_L[4],code_U[4])
+```
+
+The following function files were loaded:
+
+```{r load_function,echo=FALSE}
+noquote(function_file)
+```
+
+# procedure
+
+## Opening the data files
+
+```{r, open_files,echo=FALSE}
+# Opening the genotypic data file
+reduced_data<-full_path(where_out_4,reduced_data)
+dat<-read.table(reduced_data,sep="\t",stringsAsFactors = FALSE,header=TRUE)
+dat<-dat[,-1]#une colonne pour rien A corriger ? l'avenir
+reduced_info<-full_path(where_out_4,reduced_info)
+info<-read.table(reduced_info,sep="\t",stringsAsFactors = FALSE,header=TRUE)
+
+indiv_select<-full_path(where_out_4,indiv_select)
+rem<-read.table(indiv_select,sep="\t",stringsAsFactors = FALSE,header=TRUE)
+
+#Locus name
+loc<-dat[,1]
+rownames(info)<-info$locus
+genot<-dat[,-1]
+rownames(genot)<-loc
+if(removed>0) to_remove<-as.character(rem$remove[1:removed]) else to_remove<-NULL
+
+keep_ind<-setdiff(names(genot),to_remove)
+ zloc <-
+    t(apply(genot[,keep_ind],1,function(y)
+      apply(sapply(val1, function(x)
+        match(y, x,nomatch = 0)),2,sum)))
+
+  cmiss.loc <- apply(zloc[,unknown],1,sum)
+ 
+  pmiss.loc <- cmiss.loc / length(keep_ind)
+  p.keep.loc <- pmiss.loc[pmiss.loc < max_miss_loc]
+  
+  out<-tolower(sapply(genot[names(p.keep.loc),keep_ind], as.character))
+  rownames(out)<-names(p.keep.loc)
+  output_data(out,where_out_5,"data_joinmap.txt")
+  output_data(info[names(p.keep.loc),],where_out_5,"info_loc.txt")
+
+```

@@ -1,0 +1,396 @@
+---
+title: "Marker-list curation (GBS)"
+author: "Luc Baudouin"
+date: "18 mai 2016"
+output: pdf_document
+---
+
+# Introduction
+Step 4: the purpose of this treatment chain is to automatize the selection of useful markers. There are two main issues: redundant markers and outliers ie markers that segregate independently from the other loci of the same scaffold (possibly chimeric scaffolds or wrong assignment of marker to scaffold).
+
+
+# Preliminary
+
+```{r get_parameters,echo=FALSE}
+topath<-function(path,file) paste(path, file,sep="/")
+# Note: Set the working directory as the one where the present file is located. 
+here<-getwd()
+source(topath(here,"tassel_to_J_parameters.R"))
+if(!dir.exists(where_out_4)) dir.create(where_out_4)
+
+suppressWarnings(require("xtable",quietly=TRUE))
+```
+
+# Information on the dataset
+
+`r comment0`
+
+# Additional comments
+
+`r comment4`
+
+
+Data are coded as "`r genotype_code`"
+
+## data files
+
+Genotyping data are in file "`r file.value.3`",  directory "`r where_out_3 `".
+
+Identifiers are in file "`r file.ident.3`",  directory "`r where_out_3 `".
+
+Locus column is `r marker_column`, scaffold column is `r scaffold_column`, position column is `r position_column`.
+
+Output directory is `r where_out_4`.
+
+## Source code
+
+
+```{r functions,echo=FALSE}
+
+# The functions used here are in a special directory
+function_file<-list.files(where_functions)
+function_file<-function_file[grepl(".[rR]$",function_file,perl=TRUE)]
+
+bid<-sapply(paste(where_functions,"/",function_file, sep=""),source,echo=FALSE,verbose=FALSE)
+full_path<- function(place,file) paste(place,file,sep="/")
+output_data<-function(Table, place, file) write.table(cbind(index=1:nrow(Table),loc=rownames(Table),Table),full_path(place,file),sep="\t",row.names=FALSE,quote=FALSE)
+
+```
+
+The following function files were loaded from folder `r where_functions`:
+
+```{r load_function,echo=FALSE}
+noquote(function_file)
+```
+
+# Overall statistics
+
+```{r, open_files,echo=FALSE}
+# Opening the genotypic data file
+file.value.3<-full_path(where_out_3,file.value.3)
+dat<-read.table(file.value.3,sep="\t",stringsAsFactors = FALSE,header=TRUE)
+#Locus name
+loc<-dat[,1]
+genot<-dat[,-1]
+rownames(genot)<-loc
+
+#size of the data matrix
+locn<-nrow(genot)
+indn<-ncol(genot)
+
+#Loading identifiers
+file.ident.3<-paste(where_out_3,file.ident.3,sep="/")
+id<-read.table(file.ident.3,sep="\t",stringsAsFactors = FALSE,header=TRUE,na.strings ="#N/A")
+
+scaff_table<-table(id[scaffold_column])
+scaff_d<-table(scaff_table)
+# three groups of scaffolds
+# scaffolds with only one locus cannot be improved at this stage
+scaff_1<-names(scaff_table[scaff_table==1])
+#  scaffolds with two unlinked loci have to be removed
+scaff_2<-names(scaff_table[scaff_table==2])
+# Identify outliers by majority vote. Retain the other one
+scaff_n<-names(scaff_table[scaff_table>2])
+```
+
+```{r plot_loci,echo=FALSE}
+
+plot(scaff_d,xlab="number of loci",ylab="number of scaffolds",main ="distribution of loci on scaffolds",lwd=10,lend=1)
+
+```
+
+There are `r sum(scaff_d)` scaffolds containing `r sum(scaff_table)` markers. `r scaff_d[1]` scaffolds have only 1 marker.  `r scaff_d[2]` scaffolds have 2 markers. The rest, `r sum(scaff_d)-scaff_d[1]-scaff_d[2]` scaffolds have from three to `r max(scaff_table)` markers. When outliers occur in scaffolds with two markers, these scaffolds will be discarded. With three or more markers, only outliers will be discarded.
+
+To identify outliers and redundant markers, We compute two distances: The first distance (*dist*) takes into account missing data and the expected number of recombinations is computed *under the hypothesis that the loci are independent*. The second distance (*f*2) is the rate of recombination based on the the individuals that have no missing data at the considered loci. (*f*1 is *dist* divided by the number of individuals). The procedures for two and more than two loci differ.
+
+
+# data curation 
+
+## Dealing with 2-locus scaffolds
+
+For scaffolds with only two loci, the outliers are listed in file `r pair_outlier`. redundant loci are in file `r pair_redundant`. There are two kinds of redundant loci. If *dist*=0, they are strictly identical and one of them is discarded. If *dist*>0 but*f*2=0, they differ only by the presence of missing data. At a later stage, imputation will be performed on one of them and the other one of will be discarded. 
+
+
+
+```{r pairs,echo=FALSE}
+pair_dist<-pair_check_all(scaff_2,genot,id,"BC1",code=genotype_code)
+#pair_dist
+Main<-substitute(paste("distribution of ", italic("dist"), " among 2-locus scaffolds"))
+plot(table(pair_dist$dist)/2,main = Main, xlab="distance", ylab="number of scaffolds",lwd=10,lend=1)
+outlier_pair<-subset_data(pair_dist,genot,t_outlier)
+if(nrow(outlier_pair)>0) output_data(outlier_pair,where_out_4,pair_outlier)
+duplicate<-subset_data(pair_dist,genot,0,FALSE)
+near_duplicate<-subset_data(pair_dist,genot,0,FALSE,distance = "f2")
+if(nrow(near_duplicate)>0)output_data(near_duplicate,where_out_4,pair_redundant)
+
+
+```
+There are `r nrow(pair_dist)/2` scaffolds with 2 loci. Among them, `r nrow(outlier_pair)/2` have outlier (i.e. with discordant seggregation) and `r nrow(duplicate)` have redundant loci.
+
+
+```{r select_pair,echo=FALSE}
+scaff2<-unique(pair_dist$scaffold)
+select_pair<-NULL
+for(x in  scaff2)
+  select_pair<-rbind(select_pair,cleanup_data(x,pair_dist,t_outlier,l_gap))
+tx<-t(table(select_pair$select))
+x<-xtable(tx,caption="Marker categories in scaffolds with 2 loci")
+u1<-print(x,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+```
+
+The `r nrow(pair_dist)` loci were distributed into 5 or 6 classes. Loci with a unique genotypic array were classified as "small" or  "large" [gaps] according to the value of *f*2. Outliers were discarded. In groups of loci with the same genotypic array, one was chosen and the other one (it's "descendant") was classified as "redundant" in case of exact matching or "quasi-redundant" when mismatches involve only missing data. These loci will not be used in mapping, but quasi-redundant loci may be use to impute data in the chosen loci.
+
+> Note: in this document, the following sentences "mark1 is a descendant of mark2", "mark1's target of mark2" and "mark1 points toward mark2" are  equivalent. 
+
+`r u1`
+## Dealing with multiple locus scaffolds
+
+For scaffolds with more than two loci, *dist* was computed for all pair of loci and, for a given locus, the closest locus (the target) is identified. Then, *dist*, *f*1 and *f*2 between these two loci were attributed to the considered locus. Outliers (*dist* is larger than a given threshold) were marked for suppression. 
+
+
+### identifying redundants and outliers
+
+The following procedure was used to eliminate outliers and redundant markers. 
+
+Starting from the first marker.
+
+* if it is outlier, mark it as discarded.
+* if it is redundant and if the target is not discarded, mark it as discarded and mark the target as "chosen".
+* if it is quasi-redundant, and if the target is not discarded, 
+    + if the target has more markers, mark the present marker as deleted.
+    + if not, retain the marker.
+* if it is not redundant (*f*2>0), retain the marker. It was marked as "small" or "large" [gap] according to the value of *f*2.
+
+The procedure made sure that the target of all redundent loci are "chosen" marker by applying an inheritence rule (eg. suppose that mark1 points toward mark2 and mark2 points toward mark3, mark1's target is be redefined as mark3). 
+
+
+```{r multiple,echo=FALSE}
+
+multiple_dist<-multiple_check_all(scaff_n,genot,id,"BC1",code=genotype_code)
+Main<-substitute(paste("distribution of the minimum of ", italic("dist"), " among multiple locus scaffolds"))
+plot(table(multiple_dist$dist)/2,main = "distribution of minimum distances among multiple locus scaffolds", xlab="distance", ylab="number of loci",lwd=10,lend=1)
+outlier_multi<-subset_data(multiple_dist,genot,t_outlier)
+
+if(nrow(multiple_dist)>0) output_data(multiple_dist,where_out_4,multiple_all)
+if(nrow(outlier_multi)>0) output_data(outlier_multi,where_out_4,multiple_outlier)
+
+#plot(outlier_multi$f2,outlier_multi$f1,ylab="independent",xlab="linked",main="plot of dist onto f2", asp=1)
+#abline(a=0,b=1)
+
+```
+
+
+
+```{r select_multiple,echo=FALSE}
+scaff1<-unique(multiple_dist$scaffold)
+select_multi<-NULL
+
+for(x in  scaff1)
+  select_multi<-rbind(select_multi,cleanup_data(x,multiple_dist,t_outlier,l_gap))
+x<-xtable(t(table(select_multi$select)),caption="Marker categories in scaffolds with more than 2 loci")
+u2<-print(x,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+tt<-table(table(select_multi$parent))
+tt<- tt[-length(tt)]
+```
+In scaffolds with more than 2 loci, we have `r length(scaff1)` scaffolds with `r nrow(multiple_dist)` loci. 
+`r u2`
+
+There are up to `r max(as.numeric(names(tt)))` descendants per chosen locus.
+
+```{r plot_loci1, echo=FALSE}
+plot(as.numeric(names(tt)),tt, type="h",main="number of descendants per chosen locus",xlab="nb. descendants",ylab="nb. chosen loci",lwd=10,lend=1)
+```
+
+Locus selection drastically reduces the number of loci per scaffold
+
+```{r plot_loci2,echo=FALSE}
+
+scaff_table2<-table(select_multi$scaffold[select_multi$select %in% c("chosen", "large","small")])
+scaff_d2<-table(scaff_table2)
+plot(scaff_d2,xlab="number of loci",ylab="number of scaffolds after locus selection",main ="distribution of loci on scaffolds",lwd=10,lend=1)
+```
+
+### imputing missing data whenever possible
+
+
+* Impute the missing data in the selected loci based on a majority vote among their descendants.
+* whenever possible impute markers in the middle of an uniform sequence.
+
+The imputation rules are: if descendants present only one genotype (possibly in addition to missing values), this value is retained. if two genotypes are present but the frequency of the most frequent is above 0.8 (adjustable parameter), this genotype is chosen. otherwise, a missing values is returned. 
+
+
+```{r all_info,echo=FALSE}
+select_single<-id[as.character(id[[scaffold_column]]) %in% scaff_1,]
+select_single<-data.frame(scaffold=select_single[[scaffold_column]],
+                          locus=select_single[[marker_column]],
+                          posit=select_single[[position_column]],
+                          target=NA,dist=NA,f1=NA,f2=NA,signif=0,select="single",parent="")
+genot_single<-genot[select_single$locus,]
+select_single$signif<- sapply(select_single$locus, function(x) length(grep("M",genot_single[x,],invert=TRUE)))
+selected<-rbind(select_multi,select_pair,select_single)
+```
+
+
+
+
+
+
+
+### Correcting errors based in scaffolds with more than 2 loci.
+
+Given we consider only markers that are on the same scaffold, we can adopt simple correction rules. Redundant loci are taken into account 
+
+* there must be an error in sequences of the type "...aaahaaa..." or  "...aaahhaaa...". It is corrected.
+* sequence "...aaahahhh..." cumulates an error and a crossing over. However, we don't know the exact place of the crossing over. The ambiguity is lifted by introducing missing data. The resulting sequence is "...aaauuhhh..."
+
+
+```{r correct,echo=FALSE}
+u<-table(selected$scaffold)
+n_long_scaff<-length(u[u>4])# number of scaffolds that deserve correction,
+long_scaff_num<-u[u>4]
+long_scaff<-names(long_scaff_num)
+corrdata<-NULL
+for(x in long_scaff) corrdata<-rbind(corrdata,do_correct(x,selected,genot,genotype_code))
+corrected<-genot
+corrected[rownames(corrdata),]<-sapply(corrdata,as.character)
+############################################################
+has_miss<-grep(substr(genotype_code,4,4),toupper(as.character(as.matrix(genot))))
+resultm<-as.character(as.matrix(corrected))[has_miss] 
+has_p1<-grep(substr(genotype_code,1,1),toupper(as.character(as.matrix(genot))))
+resultp1<-as.character(as.matrix(corrected))[has_p1] 
+# In F2, this would be used
+# has_p2<-grep(substr(genotype_code,2,2),toupper(as.character(as.matrix(genot))))
+# resultp2<-as.character(as.matrix(corrected))[has_p2] 
+has_h<-grep(substr(genotype_code,3,3),toupper(as.character(as.matrix(genot))))
+resulth<-as.character(as.matrix(corrected))[has_h] 
+
+################################################################
+
+x3<-xtable(t(table(resultm)),caption="Correction result: missing data became : ")
+u3<-print(x3,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+
+x4<-xtable(t(table(resultp1)),caption="Correction result: recurrent parent data became: ")
+u4<-print(x4,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+
+x5<-xtable(t(table(resulth)),caption="Correction result: heterozygote data became: ")
+u5<-print(x5,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+
+########################################################################
+```
+
+
+
+## result of correction
+
+`r u3`
+
+`r u4`
+
+`r u5`
+
+
+```{r impute,echo=FALSE}
+
+ancestor<-unique(selected$parent)
+ancestor<-ancestor[nchar(ancestor)!=0]
+
+ttx<-table(selected$select)
+x6<-xtable(t(ttx),caption="Marker categories in all scaffolds")
+u6<-print(x6,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+
+correct<-t(sapply(ancestor,impute_x,corrected,selected, accept=majority,code=genotype_code))
+uncorrect<-as.matrix(corrected[ancestor,])
+colnames(correct)<-colnames(uncorrect)
+
+
+has_miss2<-grep(substr(genotype_code,4,4),toupper(as.character(uncorrect)))
+
+result2<-as.character(correct)[has_miss2]
+
+x7<-xtable(t(table(result2)),caption="Imputation results")
+u7<-print(x7,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.placement="top")
+corrected2<-corrected
+corrected2[rownames(correct),]<-correct
+
+
+```
+
+To summarize the previous steps, the following table represents the category assignments for all loci. Category "single" was used for loci that are isolated on a scaffold (they will be conserved).
+
+`r u6`
+
+Out of `r sum(ttx)` loci, `r sum(ttx[c("large","single","small","chosen")])` are chosen. They represent a total of  `r length(as.character(uncorrect))` data points, with `r length(has_miss)` (`r round(length(has_miss) / length(as.character(uncorrect))*100,2)` % ) were missing data. 
+
+
+It was possible to impute `r sum(table(result2)[1:2])` (`r round( sum(table(result2)[1:2]) / length(as.character(uncorrect))*100,2)` % ) missing values.
+
+
+`r u7`
+
+
+```{r reassign, echo=FALSE}
+choice<-selected$locus[selected$select=="chosen"]
+#execution
+out<-NULL
+for(i in 1:length(choice)) out<-rbind(out,reassign_chosen(choice[i],corrected2,selected))
+selected$swap<-NA
+selected$new_signif<-selected$signif
+m<-match(out$locus,selected$locus)
+selected[m,]<-out
+#order 'selected'
+rownames(selected)<-as.character(selected$locus)
+selected<-selected[rownames(corrected2),]
+output_data(selected,where_out_4,"newinfo.txt")
+ok<-selected$select %in% c( "chosen","large", "small","single")
+good_data<-corrected2[ok,]
+output_data(good_data,where_out_4,"reduced_data.txt")
+output_data(selected[ok,],where_out_4,"reduced_info.txt")
+
+val1 <- sort(c(code_L, code_U))
+zloc <-
+  t(apply(good_data,1,function(y)
+    apply(sapply(val1, function(x)
+      match(y, x,nomatch = 0)),2,sum)))
+zind <-
+  t(apply(good_data,2,function(y)
+    apply(sapply(val1, function(x)
+      match(y, x,nomatch = 0)),2,sum)))
+output_data(zloc,where_out_4,"stat_loc.txt")
+output_data(zind,where_out_4,"stat_ind.txt")
+selind <-
+  select_ind(
+    gdata = good_data, idata = selected[ok,], threshold = max_miss_loc, stop.at = stop_remove, code = "ABHU"
+  )
+x8 <- xtable(selind,caption = "removing individuals")
+u8 <-
+  print(
+    x8,include.rownames = FALSE,comment = FALSE,print.results = FALSE,caption.placement =
+      "top"
+  )
+plot(
+  selind$ind2,selind$scaff, xlab = "maximal missing % per individual",ylab =
+    "scaffolds with less than 20% missing data", type = "c", main = "Effect of removing individuals"
+)
+text(selind$ind2,selind$scaff,selind$remove,cex = 1 / 2)
+text(
+  selind$ind2,selind$scaff,selind$size,pos = 1,cex = 0.7, col = "red"
+)
+output_data(selind,where_out_4,"indiv_select.txt")
+```
+
+
+
+End of step 4
+
+`r u8`
+
+Created files
+ 
+`r paste(dir(where_out_4), collapse="\n\n")`
+ 
+in directory    
+
+`r where_out_4`
+
+
+Warning: This procedure efficiently eliminates isolated outlayers. However rare multiple outlayers in the same scaffold may be missed. Manual curation is recommended.

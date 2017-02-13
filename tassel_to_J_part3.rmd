@@ -1,0 +1,103 @@
+---
+title: "resultats tassel part 3"
+author: "Luc Baudouin"
+date: "15 février 2016"
+output: pdf_document
+---
+Codes the genotype file in a form usable by mapping software. Parents are removed from the output file.
+
+# Preliminary
+
+```{r get_parameters,echo=FALSE}
+topath<-function(path,file) paste(path, file,sep="/")
+# Note: Set the working directory as the one where the present file is located. 
+here<-getwd()
+source(topath(here,"tassel_to_J_parameters.R"))
+if(!dir.exists(where_out_3)) dir.create(where_out_3)
+
+suppressWarnings(require("xtable",quietly=TRUE))
+```
+
+# Information on the dataset
+
+`r comment0`
+
+# Additional comments
+
+`r comment3`
+
+# procedure
+
+
+
+```{r utilities,echo=FALSE}
+code <- function(val,id,parent,gcode="ABHU") {
+  code_l<-strsplit(gcode,split =  "")[[1]]
+  val2 <- rep(code_l[4],length(val))
+  names(val2)<-names(val)
+  val2[val == id$Hyb] <- code_l[3]
+  val2[val == id$Dwarf] <- code_l[1]
+  val2[!(names(val2) %in% parent)][-1]
+}
+
+
+```
+
+
+## opening the data file
+
+```{r data_entry,echo=FALSE}
+#Remettre l'ouverture des fichiers. Fusionner ?
+n_value<-length(file.value)
+n_id<-length(file.ident)
+if(n_id!=n_value) stop("Numbers of marker identity and genotype files differ")
+value<-NULL
+ident<-NULL
+for(i in 1:n_value){ 
+  value<-rbind(value, read.table(topath(where_out_2,file.value.2[i]),header = TRUE,stringsAsFactors = FALSE))
+  ident<-rbind(ident, read.table(topath(where_out_2,file.ident.2[i]),header = TRUE,stringsAsFactors = FALSE))
+} 
+
+  markers<-value[[1]] 
+  indiv<-colnames(value) 
+ 
+ 
+
+progeny<-indiv[!(indiv %in% parent)&!(indiv %in% others)] 
+
+
+```
+
+Sample data
+
+```{r recode,echo=FALSE}
+
+keep=ident$is_good&ident$balanced
+loc_init<-length(keep)
+loc_final<-sum(keep)
+scaff_init<-length(unique(ident[[scaffold_column]]))
+scaff_final<-length(unique(ident[[scaffold_column]][keep]))
+ratio_loc<-loc_final/loc_init
+ratio_scaff<-scaff_final/scaff_init
+
+coded<-t(sapply(1:length(markers), function(x) code(value[x,],ident[x,],parent)) )
+write.table(cbind(marker=markers[keep],coded[keep,]),topath(where_out_3,file.value.3),sep="\t",row.names=FALSE,quote=FALSE)
+write.table(ident[keep,],topath(where_out_3,file.ident.3),sep="\t",row.names=FALSE,quote=FALSE)
+#rownames(coded)<-markers
+noquote(cbind(markers[1:10],coded[1:10,1:10]))
+```
+
+End of step 3
+ 
+* The number of markers was reduced  from `r formatC(loc_init,format="f",big.mark = ",",digits=0)` to `r formatC(loc_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_loc*100,2)` % of loci were conserved.
+* The number of scaffolds reduced from `r formatC(scaff_init,format="f",big.mark = ",",digits=0)` to `r formatC(scaff_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_scaff*100,2)` % of scaffolds were conserved.
+ 
+ 
+Created files
+ 
+`r paste(dir(where_out_3), collapse="\n\n")`
+ 
+in directory    
+
+`r where_out_3`
+
