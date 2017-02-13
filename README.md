@@ -1,2 +1,2 @@
 # Curation-GBS-data
-Coding data, filtering, correcting GE, (partial ) imputing, a
+Coding data, filtering, correcting GE and imputing (withun a scaffold scale), discarding outliers and redundant markers.
