@@ -23,7 +23,7 @@ if(!dir.exists(where_out_5)) dir.create(where_out_5)
 
 # Information on the dataset
 
-`r comment4`
+`r comment5`
 
 Data are coded as "`r genotype_code`"
 
@@ -94,7 +94,27 @@ keep_ind<-setdiff(names(genot),to_remove)
   
   out<-tolower(sapply(genot[names(p.keep.loc),keep_ind], as.character))
   rownames(out)<-names(p.keep.loc)
-  output_data(out,where_out_5,"data_joinmap.txt")
-  output_data(info[names(p.keep.loc),],where_out_5,"info_loc.txt")
+  output_data(out,where_out_5,genot_file_5)
+  output_data(info[names(p.keep.loc),],where_out_5,infoloc_5)
 
 ```
+Data were in file(s)
+
+`r reduced_data`
+
+`r reduced_info`
+
+in folder    
+
+`r where_out_4`
+ 
+ 
+Created files
+ 
+`r paste(file.i, collapse="\n\n")`
+ 
+in directory    
+
+`r where_out_3`
+
+

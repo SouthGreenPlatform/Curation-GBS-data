@@ -379,10 +379,21 @@ output_data(selind,where_out_4,"indiv_select.txt")
 ```
 
 
+`r u8`
 
 End of step 4
 
-`r u8`
+
+
+Data were in file(s)
+
+`r file.value.2 `
+
+`r file.ident.3 `
+
+in folder    
+
+`r where_out_3`
 
 Created files
  

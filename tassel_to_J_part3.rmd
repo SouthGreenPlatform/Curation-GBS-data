@@ -91,11 +91,21 @@ End of step 3
  
 * The number of markers was reduced  from `r formatC(loc_init,format="f",big.mark = ",",digits=0)` to `r formatC(loc_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_loc*100,2)` % of loci were conserved.
 * The number of scaffolds reduced from `r formatC(scaff_init,format="f",big.mark = ",",digits=0)` to `r formatC(scaff_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_scaff*100,2)` % of scaffolds were conserved.
+
+Data were in file(s)
+
+`r file.value.2 `
+
+`r file.ident.2 `
+
+in folder    
+
+`r where_out_2`
  
  
 Created files
  
-`r paste(dir(where_out_3), collapse="\n\n")`
+`r paste(file.i, collapse="\n\n")`
  
 in directory    
 

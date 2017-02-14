@@ -193,6 +193,17 @@ End of step 2
 * The number of scaffolds reduced from `r formatC(scaff_init,format="f",big.mark = ",",digits=0)` to `r formatC(scaff_final,format="f",big.mark = ",",digits=0)`. `r round(ratio_scaff*100,2)` % of scaffolds were conserved.
 * `r length(remove)` individuals were removed because they don't reach `r cut.ind*100` % valid data:  `r remove`. The number of remaining progenies is `r length(retain)`.
 
+
+Data were in file(s)
+
+`r file.value `
+
+`r file.ident `
+
+in folder    
+
+`r where_out_1`
+
 Created files
 
 `r paste(dir(where_out_2), collapse="\n\n")`

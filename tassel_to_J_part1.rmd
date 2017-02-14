@@ -71,9 +71,10 @@ Data were in file(s)
 in folder    
 `r where_in`
 
-
 Created files     
-`r paste(dir(where_out_1), collapse="\n\n")`
+
+`r paste(c(file.value,file.ident), collapse="\n\n")`
 
 in folder    
+
 `r where_out_1`
