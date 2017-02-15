@@ -1,5 +1,5 @@
 ---
-title: "Final data output (GBS)"
+title: "Marker-list curation (GBS) step 5"
 author: "Luc Baudouin"
 date: "18 mai 2016"
 output: pdf_document
@@ -111,10 +111,11 @@ in folder
  
 Created files
  
-`r paste(file.i, collapse="\n\n")`
- 
-in directory    
+`r paste(c(genot_file_5,infoloc_5), collapse="\n\n")`
 
-`r where_out_3`
+ 
+in folder   
+
+`r where_out_5`
 
 

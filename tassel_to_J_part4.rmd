@@ -1,5 +1,5 @@
 ---
-title: "Marker-list curation (GBS)"
+title: "Marker-list curation (GBS) step 4"
 author: "Luc Baudouin"
 date: "18 mai 2016"
 output: pdf_document
@@ -387,7 +387,7 @@ End of step 4
 
 Data were in file(s)
 
-`r file.value.2 `
+`r file.value.3 `
 
 `r file.ident.3 `
 
@@ -399,7 +399,7 @@ Created files
  
 `r paste(dir(where_out_4), collapse="\n\n")`
  
-in directory    
+in folder    
 
 `r where_out_4`
 

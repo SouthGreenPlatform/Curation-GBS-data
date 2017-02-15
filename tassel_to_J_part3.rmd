@@ -1,5 +1,5 @@
 ---
-title: "resultats tassel part 3"
+title: "Marker-list curation (GBS) step 3"
 author: "Luc Baudouin"
 date: "15 février 2016"
 output: pdf_document
@@ -105,9 +105,12 @@ in folder
  
 Created files
  
-`r paste(file.i, collapse="\n\n")`
+
+`r file.value.3 `
+
+`r file.ident.3 `
  
-in directory    
+in folder    
 
 `r where_out_3`
 

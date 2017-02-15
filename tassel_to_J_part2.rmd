@@ -1,5 +1,5 @@
 ---
-title: "resultats tassel part 2"
+title: "Marker-list curation (GBS) step 2"
 author: "Luc Baudouin"
 date: "15 février 2016"
 output: pdf_document
