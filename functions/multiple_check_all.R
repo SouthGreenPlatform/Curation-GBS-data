@@ -1,4 +1,4 @@
-#' Title repeatedly checking scaffolds with two locus
+#' Title repeatedly checking scaffolds with more than two locus
 #'
 #' @param scaff_list character vector containing the names of scaffolds with 2 loci 
 #' @param genot_data data.frame containing genotypic data

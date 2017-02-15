@@ -1,4 +1,4 @@
-#' Title impute missing data in "ancestor" loci
+#' Title impute missing data in "parent" loci
 #'
 #' @param locus character: a locus name
 #' @param genot_data data.frame: the genotypic data
@@ -34,7 +34,7 @@ impute_x<-function(locus, genot_data,select_file,type="BC1",accept=0.8,code="ABH
   return(correct)
 }
 
-#' Title corrects one value
+#' Title imputation for one value
 #'
 #' @param current character: missing genotypic value to be imputed (in the ancestor)
 #' @param character vector: Source the genotypes of the descendent loci for the present individual

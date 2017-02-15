@@ -249,7 +249,7 @@ transcode<-function(Data,code1, code2){
   Data
 }
 
-findCO2 <- function (corr) {
+findCO2 <-function (corr) {
   # locates crossing overs (CO) to intervals with missing data (code "9")
   # in case of missing data, intervals are assigned equally distributed CO probability.
   # This is the F2 version (should work also for backcrosses!)
@@ -375,7 +375,7 @@ findModif<-function(first,second,code="abhm"){
 }
 
 
-summaryModif <- function (genotM, correctg,...) {
+summaryModif<-function (genotM, correctg,...) {
   #summary, locus by locus of changes 
   # will serve as a basis to evaluate error and missing data rate.
   #needs improving

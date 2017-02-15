@@ -1,13 +1,13 @@
 
 #' Title Reassign the parents in a group of loci of the same scaffold
-#' Previous functions created groups of markers brlonging to the same scaffold and differing only by missing data.
+#' Previous functions created groups of markers belonging to the same scaffold and differing only by missing data.
 #' One of these loci was assigned the role of "parent" (the one which had the largest number of valid data)
 #' If, after data correction and imputation, one of its descendents has more valid data, this function will assign it as the new parent 
 #' 
 #' @author Luc Baudouin
 #'  
 #'  
-#' @param chosen_locus Character (atomic): a locus 
+#' @param chosen_locus character (atomic): a locus 
 #' @param corrected_data  data.frame: the genotypic values 
 #' @param locus_info  data.frame: tle locus information data
 #'

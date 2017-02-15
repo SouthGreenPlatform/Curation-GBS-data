@@ -1,5 +1,5 @@
 distance<-function(gmark1, gmark2,type,code="abh-"){
-  #
+  # compute three kinds of recombination distances
   cv<- strsplit(code,split="")[[1]]
   tc<-grep(type,c("BC1","F2"))
   if( length(tc)==0) stop( "type must be in c('BC1','F2').")

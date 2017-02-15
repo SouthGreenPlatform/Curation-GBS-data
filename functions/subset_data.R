@@ -1,4 +1,4 @@
-# extracts a specified subset of dataset data
+# extracts a specified subset of a dataset
 # The condition applies to a locus but the whole scaffold is extracted.
 subset_data<-function(loc_dist,genot_data,threshold,up=TRUE,distance="dist"){
   if(up) ld<-loc_dist[loc_dist[[distance]]>threshold,] else ld<-loc_dist[loc_dist[[distance]]<=threshold,]

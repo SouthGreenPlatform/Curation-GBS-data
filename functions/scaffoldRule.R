@@ -1,4 +1,4 @@
-#' Title Defines corrextion rules
+#' Title Defines correction rules for scaffolds
 #'
 #' @return character matrix: the rules
 #' @export

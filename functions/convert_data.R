@@ -1,4 +1,4 @@
-#' Title convert data
+#' Title convert data into an internal format
 #'
 #' @param file.value character vector: names of the genotype data files.
 #' @param file.in character vector: names of the input files 

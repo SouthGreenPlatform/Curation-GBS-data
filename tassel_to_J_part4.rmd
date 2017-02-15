@@ -108,7 +108,7 @@ To identify outliers and redundant markers, We compute two distances: The first 
 
 ## Dealing with 2-locus scaffolds
 
-For scaffolds with only two loci, the outliers are listed in file `r pair_outlier`. redundant loci are in file `r pair_redundant`. There are two kinds of redundant loci. If *dist*=0, they are strictly identical and one of them is discarded. If *dist*>0 but*f*2=0, they differ only by the presence of missing data. At a later stage, imputation will be performed on one of them and the other one of will be discarded. 
+There are two kinds of redundant loci. If *dist*=0, they are strictly identical and one of them is discarded. If *dist*>0 but*f*2=0, they differ only by the presence of missing data. One of them is discarded as quasi_redundant. Its data are however used to perform imputation on the other one.   
 
 
 
@@ -118,10 +118,10 @@ pair_dist<-pair_check_all(scaff_2,genot,id,"BC1",code=genotype_code)
 Main<-substitute(paste("distribution of ", italic("dist"), " among 2-locus scaffolds"))
 plot(table(pair_dist$dist)/2,main = Main, xlab="distance", ylab="number of scaffolds",lwd=10,lend=1)
 outlier_pair<-subset_data(pair_dist,genot,t_outlier)
-if(nrow(outlier_pair)>0) output_data(outlier_pair,where_out_4,pair_outlier)
+#if(nrow(outlier_pair)>0) output_data(outlier_pair,where_out_4,pair_outlier)
 duplicate<-subset_data(pair_dist,genot,0,FALSE)
 near_duplicate<-subset_data(pair_dist,genot,0,FALSE,distance = "f2")
-if(nrow(near_duplicate)>0)output_data(near_duplicate,where_out_4,pair_redundant)
+#if(nrow(near_duplicate)>0) output_data(near_duplicate,where_out_4,pair_redundant)
 
 
 ```
@@ -140,8 +140,7 @@ u1<-print(x,include.rownames=FALSE,comment=FALSE,print.results=FALSE,caption.pla
 
 The `r nrow(pair_dist)` loci were distributed into 5 or 6 classes. Loci with a unique genotypic array were classified as "small" or  "large" [gaps] according to the value of *f*2. Outliers were discarded. In groups of loci with the same genotypic array, one was chosen and the other one (it's "descendant") was classified as "redundant" in case of exact matching or "quasi-redundant" when mismatches involve only missing data. These loci will not be used in mapping, but quasi-redundant loci may be use to impute data in the chosen loci.
 
-> Note: in this document, the following sentences "mark1 is a descendant of mark2", "mark1's target of mark2" and "mark1 points toward mark2" are  equivalent. 
-
+> Note: in this document, the following sentences are  equivalent: "mark1 is a descendant of mark2", "mark1's target (or parent) of mark2" and "mark1 points toward mark2" 
 `r u1`
 ## Dealing with multiple locus scaffolds
 
@@ -171,8 +170,8 @@ Main<-substitute(paste("distribution of the minimum of ", italic("dist"), " amon
 plot(table(multiple_dist$dist)/2,main = "distribution of minimum distances among multiple locus scaffolds", xlab="distance", ylab="number of loci",lwd=10,lend=1)
 outlier_multi<-subset_data(multiple_dist,genot,t_outlier)
 
-if(nrow(multiple_dist)>0) output_data(multiple_dist,where_out_4,multiple_all)
-if(nrow(outlier_multi)>0) output_data(outlier_multi,where_out_4,multiple_outlier)
+#if(nrow(multiple_dist)>0) output_data(multiple_dist,where_out_4,multiple_all)
+#if(nrow(outlier_multi)>0) output_data(outlier_multi,where_out_4,multiple_outlier)
 
 #plot(outlier_multi$f2,outlier_multi$f1,ylab="independent",xlab="linked",main="plot of dist onto f2", asp=1)
 #abline(a=0,b=1)
@@ -213,7 +212,7 @@ plot(scaff_d2,xlab="number of loci",ylab="number of scaffolds after locus select
 ### imputing missing data whenever possible
 
 
-* Impute the missing data in the selected loci based on a majority vote among their descendants.
+* Impute the missing data in the selected loci based on a 'majority vote' among their descendants.
 * whenever possible impute markers in the middle of an uniform sequence.
 
 The imputation rules are: if descendants present only one genotype (possibly in addition to missing values), this value is retained. if two genotypes are present but the frequency of the most frequent is above 0.8 (adjustable parameter), this genotype is chosen. otherwise, a missing values is returned. 

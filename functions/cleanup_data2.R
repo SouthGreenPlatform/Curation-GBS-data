@@ -74,15 +74,10 @@ cleanup_data<-function(scaffold,dist_data,threshold, large_gap){
   for(i in 1:nrow(Subset)){
     if(Subset$select[i] %in% c("redundent","quasi-redundent")){
       this_parent<-Subset$parent[i]
-      #fun<-function(this_parent,chosen,Subset,i){
         repeat
           if(this_parent %in% chosen)
             break else 
               this_parent<- Subset$parent[as.character(Subset$locus)==this_parent] 
-      #      this_parent
-      #}
-      #this_parent<-fun(this_parent,chosen,Subset,i)     
-      #repeat if(this_parent %in% chosen) break else this_parent<- Subset$parent[as.numeric(Subset$locus[i])==this_parent]  
       Subset$parent[i]<-this_parent
     }
       

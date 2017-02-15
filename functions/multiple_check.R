@@ -1,5 +1,5 @@
 #working with multiple
-#' Title
+#' Title working with multiple scaffolds
 #'
 #' @param scaff character: name of a scaffold with several loci 
 #' @param genot_data data.frame containing genotypic data
