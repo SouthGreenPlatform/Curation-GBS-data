@@ -1,7 +1,7 @@
 
 # About Curation-GBS-data
 
-Coding data, filtering, correcting GE and imputing (within a scaffold scale), discarding outliers and redundant markers.
+Coding data, filtering, correcting genotypes and imputing (within a scaffold scale), discarding outliers and redundant markers.
 
 ## Citation
 
