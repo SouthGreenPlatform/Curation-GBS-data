@@ -25,4 +25,6 @@ Licencied under GPLv3.
 
 Intellectual property belongs to [CIRAD](https://www.cirad.fr/) and the author.
 
+## South Green tools
 
+This work contributed to the development of https://palm-genome-hub.southgreen.fr/
